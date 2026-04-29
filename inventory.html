@@ -5,95 +5,86 @@
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <title>SHOP — Inventory</title>
   <style>
-    :root { color-scheme: light dark; }
+    body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+           margin: 0; background: #f7f7f7; color: #202020; }
     * { box-sizing: border-box; }
-    body {
-      font-family: system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
-      max-width: 1100px; margin: 0 auto; padding: 24px 16px 80px; line-height: 1.4;
-    }
-    nav { font-size: 13px; margin-bottom: 12px; }
-    nav a { color: #0b67d6; margin-right: 12px; }
-    h1 { margin: 0 0 4px; font-size: 22px; }
-    p.lead { margin: 0 0 20px; color: #666; font-size: 14px; }
+    header { background: #fff; padding: 14px 20px; border-bottom: 1px solid #e5e5e5;
+             display: flex; align-items: center; gap: 16px; }
+    header h1 { font-size: 16px; font-weight: 600; letter-spacing: 0.2em; margin: 0; }
+    header nav { margin-left: auto; display: flex; gap: 12px; }
+    header nav a { color: #555; text-decoration: none; font-size: 13px; }
+    header nav a:hover { text-decoration: underline; }
+    main { max-width: 1100px; margin: 24px auto; padding: 0 16px; }
+    .card { background: #fff; border: 1px solid #e5e5e5; border-radius: 8px; padding: 18px;
+            margin-bottom: 18px; }
+    h2 { font-size: 14px; font-weight: 600; letter-spacing: 0.15em; text-transform: uppercase;
+         margin: 0 0 12px; color: #555; }
+    p.lead { margin: 0 0 18px; color: #666; font-size: 13px; }
 
     .toolbar {
       display: flex; gap: 8px; flex-wrap: wrap; align-items: center;
-      padding: 10px; border: 1px solid #ddd; border-radius: 8px; margin-bottom: 12px;
-      position: sticky; top: 0; background: Canvas; z-index: 10;
     }
     .toolbar input[type=search], .toolbar select {
-      padding: 8px 10px; font: inherit; border: 1px solid #bbb; border-radius: 6px;
-      background: transparent; color: inherit;
+      font: inherit; padding: 8px 10px; border: 1px solid #ccc; border-radius: 6px;
+      background: #fff; color: inherit;
     }
     .toolbar input[type=search] { flex: 1 1 200px; min-width: 160px; }
     .toolbar .spacer { flex: 1; }
-    .toolbar button {
-      padding: 8px 12px; font: inherit; border: 1px solid #888; background: transparent;
-      border-radius: 6px; cursor: pointer; color: inherit;
-    }
-    .toolbar button.danger { border-color: #c33; color: #c33; }
-    .toolbar button.primary { background: #202020; color: #fff; border-color: #202020; }
-    .toolbar button:disabled { opacity: 0.4; cursor: not-allowed; }
+    button { font: inherit; padding: 8px 14px; border: 1px solid #ccc; background: #fff;
+             border-radius: 6px; cursor: pointer; color: inherit; }
+    button.primary { background: #172C50; color: #fff; border-color: #172C50; }
+    button.danger  { color: #b00020; border-color: #d99; }
+    button:disabled { opacity: 0.5; cursor: not-allowed; }
     .count { font-size: 13px; color: #666; }
 
-    table {
-      width: 100%; border-collapse: collapse; font-size: 14px;
-    }
-    th, td {
-      text-align: left; padding: 8px 6px; border-bottom: 1px solid #eee; vertical-align: middle;
-    }
-    th { font-size: 12px; text-transform: uppercase; letter-spacing: .04em; color: #666; }
+    table { width: 100%; border-collapse: collapse; font-size: 14px; }
+    th, td { text-align: left; padding: 10px 8px; border-bottom: 1px solid #eee; vertical-align: middle; }
+    th { font-size: 11px; font-weight: 600; letter-spacing: 0.1em; text-transform: uppercase; color: #888; }
     tr.sold td { opacity: 0.55; }
     tbody tr { cursor: pointer; }
-    tbody tr:hover td { background: color-mix(in srgb, CanvasText 6%, transparent); }
+    tbody tr:hover td { background: #fafafa; }
     tr.sold td .sold-tag {
       display: inline-block; padding: 1px 6px; border-radius: 3px;
-      background: #c33; color: white; font-size: 10px; font-weight: 700; margin-left: 6px;
+      background: #b00020; color: white; font-size: 10px; font-weight: 700; margin-left: 6px;
       letter-spacing: .04em;
     }
-    img.thumb { width: 56px; height: 56px; object-fit: cover; border-radius: 4px; background: #eee; }
+    img.thumb { width: 56px; height: 56px; object-fit: cover; border-radius: 6px; background: #eee; }
     .title-cell { font-weight: 600; }
-    .meta { color: #888; font-size: 12px; }
-    .actions { white-space: nowrap; }
+    .meta { color: #888; font-size: 12px; font-weight: 400; }
+    .actions { white-space: nowrap; text-align: right; }
     .actions button {
-      font: inherit; font-size: 12px; padding: 4px 8px; margin-left: 4px;
-      border: 1px solid #bbb; border-radius: 4px; background: transparent; cursor: pointer; color: inherit;
+      font-size: 12px; padding: 4px 10px; margin-left: 4px;
     }
-    .actions button.danger { border-color: #c33; color: #c33; }
     .empty { text-align: center; padding: 40px; color: #888; }
-    .auth-bar {
-      display: flex; gap: 8px; align-items: center; flex-wrap: wrap;
-      padding: 10px 12px; border: 1px solid #ddd; border-radius: 8px;
-      margin-bottom: 12px; font-size: 13px; background: color-mix(in srgb, CanvasText 4%, transparent);
-    }
+
+    .auth-bar { display: flex; gap: 8px; align-items: center; flex-wrap: wrap; font-size: 13px; }
     .auth-bar .grow { flex: 1; }
     .auth-bar input[type=password] {
-      padding: 6px 8px; font: inherit; border: 1px solid #bbb; border-radius: 4px;
-      background: transparent; color: inherit; min-width: 130px;
+      padding: 8px 10px; font: inherit; border: 1px solid #ccc; border-radius: 6px;
+      background: #fff; color: inherit; min-width: 130px;
     }
-    .auth-bar button {
-      font: inherit; font-size: 12px; padding: 6px 10px;
-      border: 1px solid #888; background: transparent; color: inherit;
-      border-radius: 4px; cursor: pointer;
-    }
+    .auth-bar button { font-size: 13px; padding: 6px 12px; }
     .auth-bar .msg { font-size: 12px; min-height: 1em; }
-    .auth-bar .msg.ok { color: #0b6b2c; }
-    .auth-bar .msg.err { color: #a1242b; }
+    .auth-bar .msg.ok { color: #137333; }
+    .auth-bar .msg.err { color: #b00020; }
+
     @media (max-width: 700px) {
       th.hide-sm, td.hide-sm { display: none; }
     }
   </style>
 </head>
 <body>
+<header>
+  <h1>INVENTORY</h1>
   <nav>
-    <a href="/">&larr; back to shop</a>
-    <a href="/admin.html">+ add item</a>
-    <a href="/categories.html">categories</a>
+    <a href="/">Storefront</a>
+    <a href="/admin.html">Add item</a>
+    <a href="/categories.html">Categories</a>
   </nav>
-  <h1>Inventory</h1>
-  <p class="lead">All items across categories. Sold items stay here but are hidden from the storefront.</p>
+</header>
 
-  <div class="auth-bar">
+<main>
+  <div class="card auth-bar">
     <strong>Admin password:</strong>
     <input id="pwCurrent" type="password" placeholder="current" autocomplete="current-password">
     <input id="pwNew" type="password" placeholder="new (min 6)" autocomplete="new-password">
@@ -103,35 +94,41 @@
     <button id="signOut">Sign out</button>
   </div>
 
-  <div class="toolbar">
-    <input id="q" type="search" placeholder="Search title, SKU, category…">
-    <select id="filter">
-      <option value="all">All</option>
-      <option value="active">Active only</option>
-      <option value="sold">Sold only</option>
-    </select>
-    <span class="count" id="count"></span>
-    <span class="spacer"></span>
-    <button id="bulkSold" disabled>Mark sold</button>
-    <button id="bulkUnsold" disabled>Mark active</button>
-    <button id="bulkDelete" class="danger" disabled>Delete</button>
-  </div>
+  <div class="card">
+    <h2>Items</h2>
+    <p class="lead">All items across categories. Sold items stay here but are hidden from the storefront.</p>
 
-  <table>
-    <thead>
-      <tr>
-        <th style="width:32px"><input type="checkbox" id="checkAll"></th>
-        <th style="width:72px"></th>
-        <th>Title</th>
-        <th class="hide-sm">Category</th>
-        <th class="hide-sm" style="width:70px">Qty</th>
-        <th class="hide-sm" style="width:80px">Price</th>
-        <th class="actions" style="width:200px">Actions</th>
-      </tr>
-    </thead>
-    <tbody id="rows"></tbody>
-  </table>
-  <div id="empty" class="empty" style="display:none">No items match.</div>
+    <div class="toolbar" style="margin-bottom:14px">
+      <input id="q" type="search" placeholder="Search title, SKU, category…">
+      <select id="filter">
+        <option value="all">All</option>
+        <option value="active">Active only</option>
+        <option value="sold">Sold only</option>
+      </select>
+      <span class="count" id="count"></span>
+      <span class="spacer"></span>
+      <button id="bulkSold" disabled>Mark sold</button>
+      <button id="bulkUnsold" disabled>Mark active</button>
+      <button id="bulkDelete" class="danger" disabled>Delete</button>
+    </div>
+
+    <table>
+      <thead>
+        <tr>
+          <th style="width:32px"><input type="checkbox" id="checkAll"></th>
+          <th style="width:72px">Image</th>
+          <th>Title</th>
+          <th class="hide-sm">Category</th>
+          <th class="hide-sm" style="width:70px">Qty</th>
+          <th class="hide-sm" style="width:80px">Price</th>
+          <th class="actions" style="width:200px">Actions</th>
+        </tr>
+      </thead>
+      <tbody id="rows"></tbody>
+    </table>
+    <div id="empty" class="empty" style="display:none">No items match.</div>
+  </div>
+</main>
 
   <script type="module">
     const rowsEl = document.getElementById('rows');

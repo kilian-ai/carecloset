@@ -5,21 +5,26 @@
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <title>SHOP — Add Item</title>
   <style>
-    :root { color-scheme: light dark; }
+    body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+           margin: 0; background: #f7f7f7; color: #202020; }
     * { box-sizing: border-box; }
-    body {
-      font-family: system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
-      max-width: 640px;
-      margin: 0 auto;
-      padding: 24px 16px 80px;
-      line-height: 1.4;
-    }
-    h1 { margin: 0 0 4px; font-size: 22px; }
-    p.lead { margin: 0 0 24px; color: #666; font-size: 14px; }
-    label { display: block; font-weight: 600; margin: 16px 0 6px; font-size: 14px; }
+    header { background: #fff; padding: 14px 20px; border-bottom: 1px solid #e5e5e5;
+             display: flex; align-items: center; gap: 16px; }
+    header h1 { font-size: 16px; font-weight: 600; letter-spacing: 0.2em; margin: 0; }
+    header nav { margin-left: auto; display: flex; gap: 12px; }
+    header nav a { color: #555; text-decoration: none; font-size: 13px; }
+    header nav a:hover { text-decoration: underline; }
+    main { max-width: 720px; margin: 24px auto; padding: 0 16px; }
+    .card { background: #fff; border: 1px solid #e5e5e5; border-radius: 8px; padding: 24px;
+            margin-bottom: 18px; }
+    h2 { font-size: 14px; font-weight: 600; letter-spacing: 0.15em; text-transform: uppercase;
+         margin: 0 0 8px; color: #555; }
+    p.lead { margin: 0 0 18px; color: #666; font-size: 13px; }
+
+    label { display: block; font-weight: 600; margin: 16px 0 6px; font-size: 13px; color: #444; }
     input[type=text], input[type=number], textarea, select {
       width: 100%; padding: 10px; font: inherit;
-      border: 1px solid #bbb; border-radius: 6px; background: transparent; color: inherit;
+      border: 1px solid #ccc; border-radius: 6px; background: #fff; color: inherit;
     }
     textarea { min-height: 100px; resize: vertical; }
     .capture {
@@ -28,9 +33,10 @@
       margin-top: 6px;
     }
     .capture .slot {
-      border: 2px dashed #bbb; border-radius: 8px; padding: 12px;
+      border: 2px dashed #ccc; border-radius: 8px; padding: 12px;
       display: flex; flex-direction: column; gap: 8px; align-items: center;
       min-height: 180px; justify-content: center; position: relative;
+      background: #fafafa;
     }
     .capture .slot small { color: #888; }
     .capture .slot img { max-width: 100%; max-height: 200px; border-radius: 4px; object-fit: contain; }
@@ -41,14 +47,17 @@
     }
     .pickers { display: flex; gap: 8px; flex-wrap: wrap; justify-content: center; }
     .pickers label.btn {
-      display: inline-block; padding: 8px 12px; border: 1px solid #888; border-radius: 6px;
-      cursor: pointer; font-weight: 500; font-size: 13px; margin: 0;
+      display: inline-block; padding: 8px 12px; border: 1px solid #ccc; border-radius: 6px;
+      cursor: pointer; font-weight: 500; font-size: 13px; margin: 0; background: #fff;
     }
     .pickers input[type=file] { display: none; }
+    button { font: inherit; padding: 8px 14px; border: 1px solid #ccc; background: #fff;
+             border-radius: 6px; cursor: pointer; color: inherit; }
     button.primary {
       margin-top: 24px; width: 100%;
-      padding: 14px; font: inherit; font-weight: 600; font-size: 15px;
-      background: #202020; color: white; border: 0; border-radius: 8px; cursor: pointer;
+      padding: 14px; font-weight: 600; font-size: 15px;
+      background: #172C50; color: white; border: 1px solid #172C50;
+      border-radius: 8px;
     }
     button.primary:disabled { opacity: 0.5; cursor: not-allowed; }
     .row { display: flex; gap: 12px; flex-wrap: wrap; }
@@ -57,28 +66,36 @@
     .sizes label {
       display: inline-flex; align-items: center; gap: 6px;
       margin: 0; font-weight: 500; font-size: 14px; cursor: pointer;
-      padding: 6px 10px; border: 1px solid #bbb; border-radius: 6px;
+      padding: 6px 10px; border: 1px solid #ccc; border-radius: 6px; background: #fff;
     }
-    .sizes label.size-other { flex: 1 1 180px; padding: 0; border: 0; }
-    .sizes label.size-other input { width: 100%; padding: 8px 10px; border: 1px solid #bbb; border-radius: 6px; font: inherit; background: transparent; color: inherit; }
+    .sizes label.size-other { flex: 1 1 180px; padding: 0; border: 0; background: transparent; }
+    .sizes label.size-other input { width: 100%; padding: 8px 10px; border: 1px solid #ccc; border-radius: 6px; font: inherit; background: #fff; color: inherit; }
     .status {
-      margin-top: 16px; padding: 12px; border-radius: 6px; font-size: 14px;
+      margin-top: 16px; padding: 10px 12px; border-radius: 6px; font-size: 13px;
       display: none;
     }
     .status.show { display: block; }
-    .status.ok { background: #e6f4ea; color: #0b6b2c; }
-    .status.err { background: #fde7e9; color: #a1242b; }
-    .barcode-hint { font-size: 12px; color: #0b6b2c; margin-top: 4px; min-height: 1em; }
-    nav { font-size: 13px; margin-bottom: 16px; }
-    nav a { color: #0b67d6; }
+    .status.ok { background: #e6f4ea; color: #137333; }
+    .status.err { background: #fdecea; color: #b00020; }
+    .barcode-hint { font-size: 12px; color: #137333; margin-top: 4px; min-height: 1em; }
   </style>
 </head>
 <body>
-  <nav><a href="/">&larr; back to shop</a> <a href="/inventory.html">inventory</a> <a href="/categories.html">categories</a></nav>
-  <h1 id="pageTitle">Add inventory item</h1>
-  <p class="lead" id="pageLead">Snap a photo of the item, optionally a tag for the barcode/SKU, then fill the rest.</p>
+<header>
+  <h1 id="headerTitle">ADD ITEM</h1>
+  <nav>
+    <a href="/">Storefront</a>
+    <a href="/inventory.html">Inventory</a>
+    <a href="/categories.html">Categories</a>
+  </nav>
+</header>
 
-  <form id="f">
+<main>
+  <div class="card">
+    <h2 id="pageTitle">Add inventory item</h2>
+    <p class="lead" id="pageLead">Snap a photo of the item, optionally a tag for the barcode/SKU, then fill the rest.</p>
+
+    <form id="f">
     <label>Item photo *</label>
     <div class="capture">
       <div class="slot" data-slot="image">
@@ -138,6 +155,8 @@
     <button class="primary" type="submit" id="submitBtn">Save item</button>
     <div id="status" class="status"></div>
   </form>
+  </div>
+</main>
 
   <script type="module">
     const MAX_DIM = 1400;
@@ -158,6 +177,7 @@
     const editing = !!editParam;
     let editTarget = null; // { category, name } captured at load (before any category change)
     if (editing) {
+      document.getElementById('headerTitle').textContent = 'EDIT ITEM';
       document.getElementById('pageTitle').textContent = 'Edit inventory item';
       document.getElementById('pageLead').textContent = 'Update fields and/or replace photos. Leave a photo empty to keep the existing one.';
       submitBtn.textContent = 'Save changes';
