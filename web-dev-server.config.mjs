@@ -295,7 +295,7 @@ export default {
           const file = path.join(DATA_DIR, `${category}.json`);
           try {
             const list = JSON.parse(await fs.readFile(file, 'utf8'));
-            ctx.body = list.filter(i => !i.sold);
+            ctx.body = list.filter(i => !i.sold).map(i => ({ ...i, category }));
           } catch {
             ctx.status = 404;
             ctx.body = { error: 'category not found' };
