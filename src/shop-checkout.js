@@ -87,6 +87,22 @@ class ShopCheckout extends PolymerElement {
         margin: 30px 0;
       }
 
+      .sold-list {
+        list-style: none;
+        padding: 0;
+        margin: 16px 0 28px;
+        max-width: 480px;
+      }
+
+      .sold-list li {
+        padding: 8px 0;
+        border-bottom: 1px solid #eee;
+      }
+
+      .sold-list li:last-child {
+        border-bottom: none;
+      }
+
       @media (max-width: 767px) {
 
         .grid {
@@ -152,7 +168,14 @@ class ShopCheckout extends PolymerElement {
         <!-- Success message UI -->
         <header state="success">
           <h1>Thank you</h1>
-          <p>[[response.successMessage]]</p>
+          <p>The following items have been marked as sold<span hidden$="[[!response.soldTo]]"> to <strong>[[response.soldTo]]</strong></span>:</p>
+          <ul class="sold-list">
+            <dom-repeat items="[[response.soldItems]]" as="title">
+              <template>
+                <li>[[title]]</li>
+              </template>
+            </dom-repeat>
+          </ul>
           <shop-button responsive>
             <a href="/">Finish</a>
           </shop-button>
@@ -254,42 +277,48 @@ class ShopCheckout extends PolymerElement {
   _submit(e) {
     if (!this.cart || !this.cart.length) return;
     const buyerName = (this.$.buyerName.value || '').trim();
-    const soldAt = new Date().toISOString();
 
     this._setWaiting(true);
 
-    const updates = this.cart.map(entry => {
-      const item = entry.item || {};
-      const cat = encodeURIComponent(item.category);
-      const name = encodeURIComponent(item.name);
-      const body = { sold: true, soldAt };
-      if (buyerName) body.soldTo = buyerName;
-      return fetch(`/api/items/${cat}/${name}`, {
-        method: 'PATCH',
-        credentials: 'same-origin',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(body)
-      }).then(r => r.ok ? r.json() : Promise.reject(new Error('HTTP ' + r.status)));
-    });
+    // Snapshot cart titles for the success view (cart will be cleared on success).
+    const snapshot = this.cart.map(entry => ({
+      title: (entry.item && entry.item.title) || (entry.item && entry.item.name) || '',
+      category: entry.item && entry.item.category,
+      name: entry.item && entry.item.name,
+    }));
 
-    Promise.all(updates).then(() => {
-      this.response = {
-        success: 1,
-        successMessage: buyerName
-          ? `Order recorded for ${buyerName}.`
-          : 'Order recorded.'
-      };
-      this._setWaiting(false);
-      this._pushState('success');
-      this.dispatchEvent(new CustomEvent('clear-cart', { bubbles: true, composed: true }));
-    }).catch(err => {
-      this.response = {
-        success: 0,
-        errorMessage: (err && err.message) || 'Could not record order.'
-      };
-      this._setWaiting(false);
-      this._pushState('error');
-    });
+    const payload = {
+      items: snapshot.map(s => ({ category: s.category, name: s.name })),
+    };
+    if (buyerName) payload.soldTo = buyerName;
+
+    fetch('/api/checkout', {
+      method: 'POST',
+      credentials: 'same-origin',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(payload),
+    }).then(r => r.ok ? r.json() : Promise.reject(new Error('HTTP ' + r.status)))
+      .then(res => {
+        const soldTitles = (res.sold && res.sold.length)
+          ? res.sold.map(s => s.title || s.name)
+          : snapshot.map(s => s.title);
+        this.response = {
+          success: 1,
+          soldTo: buyerName,
+          soldItems: soldTitles,
+        };
+        this._setWaiting(false);
+        this._pushState('success');
+        this.dispatchEvent(new CustomEvent('clear-cart', { bubbles: true, composed: true }));
+      })
+      .catch(err => {
+        this.response = {
+          success: 0,
+          errorMessage: (err && err.message) || 'Could not record order.'
+        };
+        this._setWaiting(false);
+        this._pushState('error');
+      });
   }
 
   /**

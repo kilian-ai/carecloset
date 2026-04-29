@@ -147,7 +147,7 @@ function clearSessionCookie(ctx) {
 }
 
 const PROTECTED_PAGES = new Set(['/admin.html', '/inventory.html', '/categories.html']);
-const PUBLIC_API = new Set(['/api/login', '/api/logout', '/api/categories']);
+const PUBLIC_API = new Set(['/api/login', '/api/logout', '/api/categories', '/api/checkout']);
 
 async function listCategories() {
   const files = await fs.readdir(DATA_DIR);
@@ -300,6 +300,48 @@ export default {
             ctx.status = 404;
             ctx.body = { error: 'category not found' };
           }
+          return;
+        }
+
+        // Public checkout: marks items as sold, optional soldTo
+        if (ctx.path === '/api/checkout' && ctx.method === 'POST') {
+          let body = {};
+          try { body = JSON.parse(ctx.request.rawBody || '{}'); } catch {}
+          const items = Array.isArray(body.items) ? body.items : [];
+          if (!items.length) { ctx.status = 400; ctx.body = { error: 'no items' }; return; }
+          if (items.length > 50) { ctx.status = 400; ctx.body = { error: 'too many items' }; return; }
+          const soldTo = typeof body.soldTo === 'string' ? body.soldTo.trim().slice(0, 200) : '';
+          const soldAt = new Date().toISOString();
+          const byCat = new Map();
+          for (const it of items) {
+            const cat = (it && typeof it.category === 'string') ? it.category.trim() : '';
+            const name = (it && typeof it.name === 'string') ? it.name.trim() : '';
+            if (!cat || !name) { ctx.status = 400; ctx.body = { error: 'invalid item' }; return; }
+            if (!byCat.has(cat)) byCat.set(cat, []);
+            byCat.get(cat).push(name);
+          }
+          const sold = [];
+          const missing = [];
+          for (const [category, names] of byCat) {
+            const file = path.join(DATA_DIR, `${category}.json`);
+            let list;
+            try { list = JSON.parse(await fs.readFile(file, 'utf8')); }
+            catch { for (const n of names) missing.push({ category, name: n }); continue; }
+            let dirty = false;
+            for (const name of names) {
+              const idx = list.findIndex(i => i.name === name);
+              if (idx < 0) { missing.push({ category, name }); continue; }
+              const it = list[idx];
+              if (it.sold) { missing.push({ category, name, reason: 'already sold' }); continue; }
+              const updated = { ...it, sold: true, soldAt };
+              if (soldTo) updated.soldTo = soldTo;
+              list[idx] = updated;
+              dirty = true;
+              sold.push({ category, name, title: it.title });
+            }
+            if (dirty) await fs.writeFile(file, JSON.stringify(list, null, 2));
+          }
+          ctx.body = { ok: true, sold, missing, soldTo: soldTo || null, soldAt };
           return;
         }
 
