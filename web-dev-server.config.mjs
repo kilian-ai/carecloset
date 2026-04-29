@@ -147,7 +147,7 @@ function clearSessionCookie(ctx) {
 }
 
 const PROTECTED_PAGES = new Set(['/admin.html', '/inventory.html', '/categories.html']);
-const PUBLIC_API = new Set(['/api/login', '/api/logout', '/api/categories', '/api/checkout']);
+const PUBLIC_API = new Set(['/api/login', '/api/logout', '/api/categories']);
 
 async function listCategories() {
   const files = await fs.readdir(DATA_DIR);

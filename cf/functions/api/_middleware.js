@@ -6,7 +6,6 @@ const PUBLIC = new Set([
   '/api/login',
   '/api/logout',
   '/api/auth-status',
-  '/api/checkout',
 ]);
 
 function isPublicPath(pathname, method) {

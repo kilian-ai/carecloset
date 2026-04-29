@@ -276,6 +276,15 @@ class ShopCheckout extends PolymerElement {
 
   _submit(e) {
     if (!this.cart || !this.cart.length) return;
+
+    // Require auth to place an order. If not signed in, send to login page
+    // and return back to /checkout after success.
+    const authed = /(?:^|;\s*)shop_authed=1(?:;|$)/.test(document.cookie || '');
+    if (!authed) {
+      window.location.href = '/login.html?next=' + encodeURIComponent('/checkout');
+      return;
+    }
+
     const buyerName = (this.$.buyerName.value || '').trim();
 
     this._setWaiting(true);
@@ -308,7 +317,13 @@ class ShopCheckout extends PolymerElement {
       credentials: 'same-origin',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify(payload),
-    }).then(r => r.ok ? r.json() : Promise.reject(new Error('HTTP ' + r.status)))
+    }).then(r => {
+        if (r.status === 401) {
+          window.location.href = '/login.html?next=' + encodeURIComponent('/checkout');
+          return new Promise(() => {}); // halt chain
+        }
+        return r.ok ? r.json() : Promise.reject(new Error('HTTP ' + r.status));
+      })
       .then(res => {
         const soldTitles = (res.sold && res.sold.length)
           ? res.sold.map(s => s.title || s.name)
