@@ -287,8 +287,19 @@ class ShopCheckout extends PolymerElement {
       name: entry.item && entry.item.name,
     }));
 
+    const validItems = snapshot.filter(s => s.category && s.name);
+    if (!validItems.length) {
+      this.response = {
+        success: 0,
+        errorMessage: 'Your cart is out of date. Please remove these items and add them again.'
+      };
+      this._setWaiting(false);
+      this._pushState('error');
+      return;
+    }
+
     const payload = {
-      items: snapshot.map(s => ({ category: s.category, name: s.name })),
+      items: validItems.map(s => ({ category: s.category, name: s.name })),
     };
     if (buyerName) payload.soldTo = buyerName;
 

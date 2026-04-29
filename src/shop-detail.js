@@ -246,10 +246,16 @@ class ShopDetail extends PolymerElement {
   }
 
   _addToCart() {
+    // Ensure the cart entry includes the category, even if the item snapshot
+    // came from an older inventory response that didn't include it.
+    const baseItem = this.item || {};
+    const item = baseItem.category
+      ? baseItem
+      : Object.assign({}, baseItem, { category: this.routeData && this.routeData.category });
     // This event will be handled by shop-app.
     this.dispatchEvent(new CustomEvent('add-cart-item', {
       bubbles: true, composed: true, detail: {
-        item: this.item,
+        item,
         quantity: 1,
         size: this._displaySize(this.item)
       }}));
