@@ -1,0 +1,341 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>SHOP — Inventory</title>
+  <style>
+    :root { color-scheme: light dark; }
+    * { box-sizing: border-box; }
+    body {
+      font-family: system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+      max-width: 1100px; margin: 0 auto; padding: 24px 16px 80px; line-height: 1.4;
+    }
+    nav { font-size: 13px; margin-bottom: 12px; }
+    nav a { color: #0b67d6; margin-right: 12px; }
+    h1 { margin: 0 0 4px; font-size: 22px; }
+    p.lead { margin: 0 0 20px; color: #666; font-size: 14px; }
+
+    .toolbar {
+      display: flex; gap: 8px; flex-wrap: wrap; align-items: center;
+      padding: 10px; border: 1px solid #ddd; border-radius: 8px; margin-bottom: 12px;
+      position: sticky; top: 0; background: Canvas; z-index: 10;
+    }
+    .toolbar input[type=search], .toolbar select {
+      padding: 8px 10px; font: inherit; border: 1px solid #bbb; border-radius: 6px;
+      background: transparent; color: inherit;
+    }
+    .toolbar input[type=search] { flex: 1 1 200px; min-width: 160px; }
+    .toolbar .spacer { flex: 1; }
+    .toolbar button {
+      padding: 8px 12px; font: inherit; border: 1px solid #888; background: transparent;
+      border-radius: 6px; cursor: pointer; color: inherit;
+    }
+    .toolbar button.danger { border-color: #c33; color: #c33; }
+    .toolbar button.primary { background: #202020; color: #fff; border-color: #202020; }
+    .toolbar button:disabled { opacity: 0.4; cursor: not-allowed; }
+    .count { font-size: 13px; color: #666; }
+
+    table {
+      width: 100%; border-collapse: collapse; font-size: 14px;
+    }
+    th, td {
+      text-align: left; padding: 8px 6px; border-bottom: 1px solid #eee; vertical-align: middle;
+    }
+    th { font-size: 12px; text-transform: uppercase; letter-spacing: .04em; color: #666; }
+    tr.sold td { opacity: 0.55; }
+    tbody tr { cursor: pointer; }
+    tbody tr:hover td { background: color-mix(in srgb, CanvasText 6%, transparent); }
+    tr.sold td .sold-tag {
+      display: inline-block; padding: 1px 6px; border-radius: 3px;
+      background: #c33; color: white; font-size: 10px; font-weight: 700; margin-left: 6px;
+      letter-spacing: .04em;
+    }
+    img.thumb { width: 56px; height: 56px; object-fit: cover; border-radius: 4px; background: #eee; }
+    .title-cell { font-weight: 600; }
+    .meta { color: #888; font-size: 12px; }
+    .actions { white-space: nowrap; }
+    .actions button {
+      font: inherit; font-size: 12px; padding: 4px 8px; margin-left: 4px;
+      border: 1px solid #bbb; border-radius: 4px; background: transparent; cursor: pointer; color: inherit;
+    }
+    .actions button.danger { border-color: #c33; color: #c33; }
+    .empty { text-align: center; padding: 40px; color: #888; }
+    .auth-bar {
+      display: flex; gap: 8px; align-items: center; flex-wrap: wrap;
+      padding: 10px 12px; border: 1px solid #ddd; border-radius: 8px;
+      margin-bottom: 12px; font-size: 13px; background: color-mix(in srgb, CanvasText 4%, transparent);
+    }
+    .auth-bar .grow { flex: 1; }
+    .auth-bar input[type=password] {
+      padding: 6px 8px; font: inherit; border: 1px solid #bbb; border-radius: 4px;
+      background: transparent; color: inherit; min-width: 130px;
+    }
+    .auth-bar button {
+      font: inherit; font-size: 12px; padding: 6px 10px;
+      border: 1px solid #888; background: transparent; color: inherit;
+      border-radius: 4px; cursor: pointer;
+    }
+    .auth-bar .msg { font-size: 12px; min-height: 1em; }
+    .auth-bar .msg.ok { color: #0b6b2c; }
+    .auth-bar .msg.err { color: #a1242b; }
+    @media (max-width: 700px) {
+      th.hide-sm, td.hide-sm { display: none; }
+    }
+  </style>
+</head>
+<body>
+  <nav>
+    <a href="/">&larr; back to shop</a>
+    <a href="/admin.html">+ add item</a>
+    <a href="/categories.html">categories</a>
+  </nav>
+  <h1>Inventory</h1>
+  <p class="lead">All items across categories. Sold items stay here but are hidden from the storefront.</p>
+
+  <div class="auth-bar">
+    <strong>Admin password:</strong>
+    <input id="pwCurrent" type="password" placeholder="current" autocomplete="current-password">
+    <input id="pwNew" type="password" placeholder="new (min 6)" autocomplete="new-password">
+    <button id="pwChange">Change</button>
+    <span class="msg" id="pwMsg"></span>
+    <span class="grow"></span>
+    <button id="signOut">Sign out</button>
+  </div>
+
+  <div class="toolbar">
+    <input id="q" type="search" placeholder="Search title, SKU, category…">
+    <select id="filter">
+      <option value="all">All</option>
+      <option value="active">Active only</option>
+      <option value="sold">Sold only</option>
+    </select>
+    <span class="count" id="count"></span>
+    <span class="spacer"></span>
+    <button id="bulkSold" disabled>Mark sold</button>
+    <button id="bulkUnsold" disabled>Mark active</button>
+    <button id="bulkDelete" class="danger" disabled>Delete</button>
+  </div>
+
+  <table>
+    <thead>
+      <tr>
+        <th style="width:32px"><input type="checkbox" id="checkAll"></th>
+        <th style="width:72px"></th>
+        <th>Title</th>
+        <th class="hide-sm">Category</th>
+        <th class="hide-sm" style="width:70px">Qty</th>
+        <th class="hide-sm" style="width:80px">Price</th>
+        <th class="actions" style="width:200px">Actions</th>
+      </tr>
+    </thead>
+    <tbody id="rows"></tbody>
+  </table>
+  <div id="empty" class="empty" style="display:none">No items match.</div>
+
+  <script type="module">
+    const rowsEl = document.getElementById('rows');
+    const emptyEl = document.getElementById('empty');
+    const countEl = document.getElementById('count');
+    const checkAll = document.getElementById('checkAll');
+    const qInput = document.getElementById('q');
+    const filterSel = document.getElementById('filter');
+    const bulkSold = document.getElementById('bulkSold');
+    const bulkUnsold = document.getElementById('bulkUnsold');
+    const bulkDelete = document.getElementById('bulkDelete');
+
+    let items = [];
+    const selected = new Set(); // key = category/name
+
+    const keyOf = i => `${i.category}/${i.name}`;
+    const fmtPrice = n => Number(n || 0).toLocaleString(undefined, { style: 'currency', currency: 'USD' });
+
+    async function load() {
+      const r = await fetch('/api/items');
+      items = await r.json();
+      render();
+    }
+
+    function applyFilter() {
+      const q = qInput.value.trim().toLowerCase();
+      const mode = filterSel.value;
+      return items.filter(i => {
+        if (mode === 'active' && i.sold) return false;
+        if (mode === 'sold' && !i.sold) return false;
+        if (!q) return true;
+        return (
+          (i.title || '').toLowerCase().includes(q) ||
+          (i.category || '').toLowerCase().includes(q) ||
+          (i.barcode || '').toLowerCase().includes(q)
+        );
+      });
+    }
+
+    function render() {
+      const list = applyFilter();
+      rowsEl.innerHTML = '';
+      // prune selected for items that no longer exist
+      for (const k of Array.from(selected)) {
+        if (!items.some(i => keyOf(i) === k)) selected.delete(k);
+      }
+      for (const item of list) {
+        const k = keyOf(item);
+        const tr = document.createElement('tr');
+        if (item.sold) tr.className = 'sold';
+        tr.innerHTML = `
+          <td><input type="checkbox" data-k="${k}" ${selected.has(k) ? 'checked' : ''}></td>
+          <td><img class="thumb" loading="lazy" src="/${item.image || ''}" alt=""></td>
+          <td class="title-cell">
+            ${escapeHtml(item.title || item.name)}${item.sold ? '<span class="sold-tag">SOLD</span>' : ''}
+            <div class="meta">
+              ${item.barcode ? 'SKU: ' + escapeHtml(item.barcode) + ' · ' : ''}${escapeHtml(item.name)}
+              ${item.sizes && item.sizes.length ? ' · ' + escapeHtml(item.sizes.join(', ')) : ''}
+            </div>
+          </td>
+          <td class="hide-sm">${escapeHtml((item.category || '').replace(/_/g, ' '))}</td>
+          <td class="hide-sm">${item.quantity ?? ''}</td>
+          <td class="hide-sm">${fmtPrice(item.price)}</td>
+          <td class="actions">
+            <button data-act="edit" data-k="${k}">Edit</button>
+            <button data-act="sold" data-k="${k}">${item.sold ? 'Unsell' : 'Sold'}</button>
+            <button data-act="delete" data-k="${k}" class="danger">Delete</button>
+          </td>`;
+        rowsEl.appendChild(tr);
+      }
+      emptyEl.style.display = list.length ? 'none' : 'block';
+      countEl.textContent = `${list.length} of ${items.length}`;
+      updateBulk();
+    }
+
+    function escapeHtml(s) {
+      return String(s).replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+    }
+
+    function updateBulk() {
+      const n = selected.size;
+      bulkSold.disabled = bulkUnsold.disabled = bulkDelete.disabled = n === 0;
+      bulkSold.textContent = n ? `Mark sold (${n})` : 'Mark sold';
+      bulkUnsold.textContent = n ? `Mark active (${n})` : 'Mark active';
+      bulkDelete.textContent = n ? `Delete (${n})` : 'Delete';
+      checkAll.checked = n > 0 && applyFilter().every(i => selected.has(keyOf(i)));
+    }
+
+    rowsEl.addEventListener('change', (e) => {
+      const t = e.target;
+      if (t.matches('input[type=checkbox][data-k]')) {
+        if (t.checked) selected.add(t.dataset.k); else selected.delete(t.dataset.k);
+        updateBulk();
+      }
+    });
+
+    rowsEl.addEventListener('click', async (e) => {
+      const btn = e.target.closest('button[data-act]');
+      if (!btn) {
+        // Row click anywhere outside checkboxes/buttons -> edit
+        if (e.target.closest('input,button,a,label')) return;
+        const tr = e.target.closest('tr');
+        const cb = tr && tr.querySelector('input[data-k]');
+        if (!cb) return;
+        const item = items.find(i => keyOf(i) === cb.dataset.k);
+        if (item) {
+          location.href = `/admin.html?edit=${encodeURIComponent(item.category)}/${encodeURIComponent(item.name)}`;
+        }
+        return;
+      }
+      const k = btn.dataset.k;
+      const item = items.find(i => keyOf(i) === k);
+      if (!item) return;
+      if (btn.dataset.act === 'edit') {
+        location.href = `/admin.html?edit=${encodeURIComponent(item.category)}/${encodeURIComponent(item.name)}`;
+      } else if (btn.dataset.act === 'sold') {
+        await patchItem(item, { sold: !item.sold });
+      } else if (btn.dataset.act === 'delete') {
+        if (!confirm(`Delete "${item.title}"? This removes it from the JSON file.`)) return;
+        await deleteItem(item);
+      }
+    });
+
+    checkAll.addEventListener('change', () => {
+      const list = applyFilter();
+      if (checkAll.checked) list.forEach(i => selected.add(keyOf(i)));
+      else list.forEach(i => selected.delete(keyOf(i)));
+      render();
+    });
+
+    qInput.addEventListener('input', render);
+    filterSel.addEventListener('change', render);
+
+    bulkSold.addEventListener('click', () => bulkPatch({ sold: true }));
+    bulkUnsold.addEventListener('click', () => bulkPatch({ sold: false }));
+    bulkDelete.addEventListener('click', async () => {
+      if (!confirm(`Delete ${selected.size} item(s)? This cannot be undone.`)) return;
+      const targets = items.filter(i => selected.has(keyOf(i)));
+      for (const i of targets) await deleteItem(i, true);
+      selected.clear();
+      await load();
+    });
+
+    async function patchItem(item, body) {
+      const r = await fetch(`/api/items/${encodeURIComponent(item.category)}/${encodeURIComponent(item.name)}`, {
+        method: 'PATCH',
+        headers: { 'content-type': 'application/json' },
+        body: JSON.stringify(body)
+      });
+      if (!r.ok) { alert('Update failed'); return; }
+      await load();
+    }
+
+    async function deleteItem(item, skipReload) {
+      const r = await fetch(`/api/items/${encodeURIComponent(item.category)}/${encodeURIComponent(item.name)}`, { method: 'DELETE' });
+      if (!r.ok) { alert('Delete failed for ' + item.title); return; }
+      if (!skipReload) await load();
+    }
+
+    async function bulkPatch(body) {
+      const targets = items.filter(i => selected.has(keyOf(i)));
+      for (const i of targets) {
+        await fetch(`/api/items/${encodeURIComponent(i.category)}/${encodeURIComponent(i.name)}`, {
+          method: 'PATCH',
+          headers: { 'content-type': 'application/json' },
+          body: JSON.stringify(body)
+        });
+      }
+      await load();
+    }
+
+    load();
+
+    // ---- Auth bar: change password + sign out ----
+    const pwMsg = document.getElementById('pwMsg');
+    function setPwMsg(text, kind) {
+      pwMsg.textContent = text;
+      pwMsg.className = 'msg ' + (kind || '');
+    }
+    document.getElementById('pwChange').addEventListener('click', async () => {
+      const current = document.getElementById('pwCurrent').value;
+      const next = document.getElementById('pwNew').value;
+      if (!current || !next) { setPwMsg('Enter current and new password.', 'err'); return; }
+      if (next.length < 6) { setPwMsg('New password must be at least 6 characters.', 'err'); return; }
+      setPwMsg('Updating…');
+      try {
+        const r = await fetch('/api/password', {
+          method: 'POST',
+          headers: { 'content-type': 'application/json' },
+          body: JSON.stringify({ current, next })
+        });
+        const d = await r.json().catch(() => ({}));
+        if (!r.ok) throw new Error(d.error || ('HTTP ' + r.status));
+        setPwMsg('Password updated.', 'ok');
+        document.getElementById('pwCurrent').value = '';
+        document.getElementById('pwNew').value = '';
+      } catch (ex) {
+        setPwMsg(ex.message, 'err');
+      }
+    });
+    document.getElementById('signOut').addEventListener('click', async () => {
+      await fetch('/api/logout', { method: 'POST' });
+      location.href = '/login.html';
+    });
+  </script>
+</body>
+</html>

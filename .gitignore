@@ -1,2 +1,12 @@
 node_modules
 build
+
+# Local dev data
+data/admin-config.json
+data/admin-sessions.json
+data/images/
+
+# Cloudflare deploy artifacts
+cf/dist/
+cf/node_modules/
+.wrangler/

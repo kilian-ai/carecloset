@@ -242,12 +242,18 @@ class ShopApp extends PolymerElement {
         <div class="left-bar-item">
           <paper-icon-button class="menu-btn" icon="menu" on-click="_toggleDrawer" aria-label="Categories">
           </paper-icon-button>
-          <a class="back-btn" href="/list/[[categoryName]]" tabindex="-1">
+          <a class="back-btn" href="/list/[[categoryName]]" tabindex="-1" on-click="_onBackClick">
             <paper-icon-button icon="arrow-back" aria-label="Go back"></paper-icon-button>
           </a>
         </div>
         <div class="logo" main-title=""><a href="/" aria-label="SHOP Home">SHOP</a></div>
         <div class="cart-btn-container">
+          <a href="/inventory.html" tabindex="-1" hidden\$="[[!_authed]]" title="Admin" on-click="_externalLink">
+            <paper-icon-button icon="settings" aria-label="Admin"></paper-icon-button>
+          </a>
+          <a href="/admin.html" tabindex="-1" hidden\$="[[_authed]]" title="Sign in" on-click="_externalLink">
+            <paper-icon-button icon="account-circle" aria-label="Sign in"></paper-icon-button>
+          </a>
           <a href="/cart" tabindex="-1">
             <paper-icon-button icon="shopping-cart" aria-label\$="Shopping cart: [[_computePluralizedQuantity(numItems)]]"></paper-icon-button>
           </a>
@@ -305,8 +311,8 @@ class ShopApp extends PolymerElement {
     </iron-pages>
 
     <footer>
-      <a href="https://www.polymer-project.org/3.0/toolbox/">Made by Polymer</a>
-      <div class="demo-label">Demo Only</div>
+      <a href="https://www.polymer-project.org/3.0/toolbox/">Made by Katharina & Kilian von Neumann-Cosel</a>
+      <div class="demo-label">Guerneville School Care Closet</div>
     </footer>
 
     <!-- a11y announcer -->
@@ -326,6 +332,11 @@ class ShopApp extends PolymerElement {
     numItems: {
       type: Number,
       value: 0
+    },
+
+    _authed: {
+      type: Boolean,
+      value: () => /(?:^|; )shop_authed=1(?:;|$)/.test(document.cookie)
     },
 
     _shouldShowTabs: {
@@ -410,6 +421,22 @@ class ShopApp extends PolymerElement {
       timeOut.run(() => {
         this.$.header.resetLayout();
       }, 1);
+    }
+  }
+
+  // Stop app-location from intercepting links to non-SPA pages (e.g. /inventory.html).
+  _externalLink(e) {
+    e.stopPropagation();
+  }
+
+  // Back arrow on detail page: derive category from the URL so it works even
+  // before shop-detail has fired change-section to populate categoryName.
+  _onBackClick(e) {
+    const m = /^\/detail\/([^/]+)\//.exec(window.location.pathname);
+    if (m) {
+      e.preventDefault();
+      window.history.pushState({}, '', '/list/' + m[1]);
+      window.dispatchEvent(new CustomEvent('location-changed'));
     }
   }
 

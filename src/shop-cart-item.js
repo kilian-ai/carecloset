@@ -164,26 +164,6 @@ class ShopCartItem extends PolymerElement {
         <a href\$="/detail/[[entry.item.category]]/[[entry.item.name]]">[[entry.item.title]]</a>
       </div>
       <div class="detail">
-        <div class="quantity">
-          <shop-select>
-            <label prefix="">Qty:</label>
-            <select id="quantitySelect" aria-label="Change quantity" value="[[entry.quantity]]" on-change="_quantityChange">
-              <option value="1">1</option>
-              <option value="2">2</option>
-              <option value="3">3</option>
-              <option value="4">4</option>
-              <option value="5">5</option>
-              <option value="6">6</option>
-              <option value="7">7</option>
-              <option value="8">8</option>
-              <option value="9">9</option>
-              <option value="10">10</option>
-              <option value="11">11</option>
-              <option value="12">12</option>
-            </select>
-            <shop-md-decorator aria-hidden="true"></shop-md-decorator>
-          </shop-select>
-        </div>
         <div class="size">Size: <span>[[entry.size]]</span></div>
         <div class="price">[[_formatPrice(entry.item.price)]]</div>
 

@@ -50,9 +50,16 @@ class ShopCart extends PolymerElement {
         </div>
         <div class="checkout-box">
           Total: <span class="subtotal">[[_formatTotal(total)]]</span>
-          <shop-button responsive>
-            <a href="/checkout">Checkout</a>
-          </shop-button>
+          <template is="dom-if" if="[[_authed]]">
+            <shop-button responsive>
+              <a href="/checkout">Checkout</a>
+            </shop-button>
+          </template>
+          <template is="dom-if" if="[[!_authed]]">
+            <shop-button responsive>
+              <a href="/login.html?next=%2F">Sign in to checkout</a>
+            </shop-button>
+          </template>
         </div>
       </div>
     </div>
@@ -74,6 +81,11 @@ class ShopCart extends PolymerElement {
     _hasItems: {
       type: Boolean,
       computed: '_computeHasItem(cart.length)'
+    },
+
+    _authed: {
+      type: Boolean,
+      value: () => /(?:^|; )shop_authed=1(?:;|$)/.test(document.cookie)
     }
 
   }}
@@ -92,6 +104,8 @@ class ShopCart extends PolymerElement {
 
   _visibleChanged(visible) {
     if (visible) {
+      // Refresh auth state in case the user signed in/out in another tab.
+      this._authed = /(?:^|; )shop_authed=1(?:;|$)/.test(document.cookie);
       // Notify the section's title
       this.dispatchEvent(new CustomEvent('change-section', {
         bubbles: true, composed: true, detail: { title: 'Your cart' }}));

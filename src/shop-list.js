@@ -82,6 +82,7 @@ class ShopList extends PolymerElement {
         id="categoryData"
         category-name="[[routeData.category]]"
         category="{{category}}"
+        categories="{{categories}}"
         failure="{{failure}}"></shop-category-data>
 
     <shop-image
@@ -123,6 +124,8 @@ class ShopList extends PolymerElement {
 
     category: Object,
 
+    categories: Array,
+
     route: Object,
 
     routeData: Object,
@@ -142,7 +145,7 @@ class ShopList extends PolymerElement {
   }}
 
   static get observers() { return [
-    '_categoryChanged(category, visible)'
+    '_categoryChanged(category, visible, categories)'
   ]}
 
   connectedCallback() {
@@ -174,8 +177,12 @@ class ShopList extends PolymerElement {
     return  '(' + quantity + ' ' + pluralizedQ + ')';
   }
 
-  _categoryChanged(category, visible) {
+  _categoryChanged(category, visible, categories) {
     if (!visible) {
+      return;
+    }
+    // Wait until categories have loaded before deciding the URL is invalid.
+    if (!category && (!categories || !categories.length)) {
       return;
     }
     this._changeSectionDebouncer = Debouncer.debounce(this._changeSectionDebouncer,

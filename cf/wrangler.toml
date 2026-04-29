@@ -1,0 +1,26 @@
+name = "care"
+compatibility_date = "2024-09-23"
+pages_build_output_dir = "./dist"
+
+[[kv_namespaces]]
+binding = "CONFIG"
+id = "30bdf7c3d6564997b0eb9cafabd8de96"
+
+[[kv_namespaces]]
+binding = "SESSIONS"
+id = "88fc7a544cc84ebd8aab58d1293de972"
+
+[[kv_namespaces]]
+binding = "INVENTORY"
+id = "17affb1147fa497fb16fb12ba22ce6b5"
+
+[[kv_namespaces]]
+binding = "RATELIMIT"
+id = "0d77e97a905c4e43be7830714d58ea0c"
+
+[[r2_buckets]]
+binding = "IMAGES"
+bucket_name = "care-images"
+
+[vars]
+SEED_PASSWORD = "c4r3c10s3t61216"

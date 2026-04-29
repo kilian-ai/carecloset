@@ -83,6 +83,20 @@ class ShopDetail extends PolymerElement {
         border-top: 1px solid #ccc;
       }
 
+      .size-display {
+        padding: 16px 0;
+        font-size: 16px;
+      }
+
+      .size-display .size-label {
+        color: var(--app-secondary-color);
+        margin-right: 8px;
+      }
+
+      .size-display .size-value {
+        font-weight: 600;
+      }
+
       shop-select > select {
         font-size: 16px;
         padding: 16px 24px 16px 70px;
@@ -146,32 +160,10 @@ class ShopDetail extends PolymerElement {
         <h1>[[item.title]]</h1>
         <div class="price">[[_formatPrice(item.price)]]</div>
         <div class="pickers">
-          <shop-select>
-            <label id="sizeLabel" prefix>Size</label>
-            <select id="sizeSelect" aria-labelledby="sizeLabel">
-              <option value="XS">XS</option>
-              <option value="S">S</option>
-              <option value="M" selected>M</option>
-              <option value="L">L</option>
-              <option value="XL">XL</option>
-            </select>
-            <shop-md-decorator aria-hidden="true">
-              <shop-underline></shop-underline>
-            </shop-md-decorator>
-          </shop-select>
-          <shop-select>
-            <label id="quantityLabel" prefix>Quantity</label>
-            <select id="quantitySelect" aria-labelledby="quantityLabel">
-              <option value="1" selected>1</option>
-              <option value="2">2</option>
-              <option value="3">3</option>
-              <option value="4">4</option>
-              <option value="5">5</option>
-            </select>
-            <shop-md-decorator aria-hidden="true">
-              <shop-underline></shop-underline>
-            </shop-md-decorator>
-          </shop-select>
+          <div class="size-display" hidden$="[[!_hasSize(item)]]">
+            <span class="size-label">Size:</span>
+            <span class="size-value">[[_displaySize(item)]]</span>
+          </div>
         </div>
         <div class="description">
           <h2>Description</h2>
@@ -232,10 +224,6 @@ class ShopDetail extends PolymerElement {
           let text = item ? item.description : '';
           this.$.desc.innerHTML = this._unescapeText(text);
 
-          // Reset the select menus.
-          this.$.quantitySelect.value = '1';
-          this.$.sizeSelect.value = 'M';
-
           this.dispatchEvent(new CustomEvent('change-section', {
             bubbles: true, composed: true, detail: {
               category: item ? item.category : '',
@@ -262,9 +250,18 @@ class ShopDetail extends PolymerElement {
     this.dispatchEvent(new CustomEvent('add-cart-item', {
       bubbles: true, composed: true, detail: {
         item: this.item,
-        quantity: parseInt(this.$.quantitySelect.value, 10),
-        size: this.$.sizeSelect.value
+        quantity: 1,
+        size: this._displaySize(this.item)
       }}));
+  }
+
+  _hasSize(item) {
+    return !!(item && item.sizes && item.sizes.length);
+  }
+
+  _displaySize(item) {
+    if (!item || !item.sizes || !item.sizes.length) return '';
+    return item.sizes[0];
   }
 
   _isDefined(item) {

@@ -1,0 +1,88 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>SHOP — Sign in</title>
+  <style>
+    :root { color-scheme: light dark; }
+    * { box-sizing: border-box; }
+    body {
+      font-family: system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+      max-width: 360px; margin: 80px auto; padding: 24px;
+      border: 1px solid #ddd; border-radius: 12px;
+    }
+    h1 { margin: 0 0 16px; font-size: 20px; }
+    label { display: block; font-weight: 600; margin: 12px 0 6px; font-size: 14px; }
+    input {
+      width: 100%; padding: 10px; font: inherit;
+      border: 1px solid #bbb; border-radius: 6px; background: transparent; color: inherit;
+    }
+    button {
+      margin-top: 16px; width: 100%; padding: 12px; font: inherit; font-weight: 600;
+      background: #202020; color: white; border: 0; border-radius: 8px; cursor: pointer;
+    }
+    .err { color: #a1242b; font-size: 14px; margin-top: 12px; min-height: 1em; }
+    nav { margin-bottom: 12px; font-size: 13px; }
+    nav a { color: #0b67d6; }
+  </style>
+</head>
+<body>
+  <nav><a href="/">&larr; back to shop</a></nav>
+  <h1>Admin sign in</h1>
+  <form id="f">
+    <label for="pw">Password</label>
+    <input id="pw" type="password" autocomplete="current-password" autofocus required>
+    <button type="submit">Sign in</button>
+    <div class="err" id="err"></div>
+  </form>
+  <script type="module">
+    const next = new URLSearchParams(location.search).get('next') || '/inventory.html';
+    const form = document.getElementById('f');
+    const pw = document.getElementById('pw');
+    const btn = form.querySelector('button');
+    const err = document.getElementById('err');
+
+    let countdownTimer = null;
+    function startCountdown(ms) {
+      clearInterval(countdownTimer);
+      btn.disabled = true;
+      pw.disabled = true;
+      const tick = () => {
+        const left = Math.max(0, Math.ceil(ms / 1000));
+        if (left <= 0) {
+          clearInterval(countdownTimer);
+          btn.disabled = false;
+          pw.disabled = false;
+          btn.textContent = 'Sign in';
+          err.textContent = '';
+          pw.focus();
+          return;
+        }
+        btn.textContent = `Wait ${left}s…`;
+        ms -= 1000;
+      };
+      tick();
+      countdownTimer = setInterval(tick, 1000);
+    }
+
+    form.addEventListener('submit', async (e) => {
+      e.preventDefault();
+      err.textContent = '';
+      try {
+        const r = await fetch('/api/login', {
+          method: 'POST',
+          headers: { 'content-type': 'application/json' },
+          body: JSON.stringify({ password: pw.value })
+        });
+        if (r.ok) { location.href = next; return; }
+        const d = await r.json().catch(() => ({}));
+        err.textContent = d.error || 'Sign in failed';
+        if (d.retryAfterMs) startCountdown(d.retryAfterMs);
+      } catch (ex) {
+        err.textContent = ex.message;
+      }
+    });
+  </script>
+</body>
+</html>

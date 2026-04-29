@@ -1,32 +1,17 @@
-import { PolymerElement, html } from '@polymer/polymer/polymer-element.js';
+import { PolymerElement } from '@polymer/polymer/polymer-element.js';
 import { Debouncer } from '@polymer/polymer/lib/utils/debounce.js';
 import { timeOut } from '@polymer/polymer/lib/utils/async.js';
-let categoryList = [
-  {
-    name: 'mens_outerwear',
-    title: 'Men\'s Outerwear',
-    image: 'images/mens_outerwear.jpg',
-    placeholder: 'data:image/jpeg;base64,/9j/4QAYRXhpZgAASUkqAAgAAAAAAAAAAAAAAP/sABFEdWNreQABAAQAAAAeAAD/7gAOQWRvYmUAZMAAAAAB/9sAhAAQCwsLDAsQDAwQFw8NDxcbFBAQFBsfFxcXFxcfHhcaGhoaFx4eIyUnJSMeLy8zMy8vQEBAQEBAQEBAQEBAQEBAAREPDxETERUSEhUUERQRFBoUFhYUGiYaGhwaGiYwIx4eHh4jMCsuJycnLis1NTAwNTVAQD9AQEBAQEBAQEBAQED/wAARCAADAA4DASIAAhEBAxEB/8QAXAABAQEAAAAAAAAAAAAAAAAAAAIEAQEAAAAAAAAAAAAAAAAAAAACEAAAAwYHAQAAAAAAAAAAAAAAERMBAhIyYhQhkaEDIwUVNREBAAAAAAAAAAAAAAAAAAAAAP/aAAwDAQACEQMRAD8A3dkr5e8tfpwuneJITOzIcmQpit037Bw4mnCVNOpAAQv/2Q=='
-  },
-  {
-    name: 'ladies_outerwear',
-    title: 'Ladies Outerwear',
-    image: 'images/ladies_outerwear.jpg',
-    placeholder: 'data:image/jpeg;base64,/9j/4QAYRXhpZgAASUkqAAgAAAAAAAAAAAAAAP/sABFEdWNreQABAAQAAAAeAAD/7gAOQWRvYmUAZMAAAAAB/9sAhAAQCwsLDAsQDAwQFw8NDxcbFBAQFBsfFxcXFxcfHhcaGhoaFx4eIyUnJSMeLy8zMy8vQEBAQEBAQEBAQEBAQEBAAREPDxETERUSEhUUERQRFBoUFhYUGiYaGhwaGiYwIx4eHh4jMCsuJycnLis1NTAwNTVAQD9AQEBAQEBAQEBAQED/wAARCAADAA4DASIAAhEBAxEB/8QAWQABAQAAAAAAAAAAAAAAAAAAAAEBAQEAAAAAAAAAAAAAAAAAAAIDEAABAwMFAQAAAAAAAAAAAAARAAEygRIDIlITMwUVEQEBAAAAAAAAAAAAAAAAAAAAQf/aAAwDAQACEQMRAD8Avqn5meQ0kwk1UyclmLtNj7L4PQoioFf/2Q=='
-  },
-  {
-    name: 'mens_tshirts',
-    title: 'Men\'s T-Shirts',
-    image: 'images/mens_tshirts.jpg',
-    placeholder: 'data:image/jpeg;base64,/9j/4QAYRXhpZgAASUkqAAgAAAAAAAAAAAAAAP/sABFEdWNreQABAAQAAAAeAAD/7gAOQWRvYmUAZMAAAAAB/9sAhAAQCwsLDAsQDAwQFw8NDxcbFBAQFBsfFxcXFxcfHhcaGhoaFx4eIyUnJSMeLy8zMy8vQEBAQEBAQEBAQEBAQEBAAREPDxETERUSEhUUERQRFBoUFhYUGiYaGhwaGiYwIx4eHh4jMCsuJycnLis1NTAwNTVAQD9AQEBAQEBAQEBAQED/wAARCAADAA4DASIAAhEBAxEB/8QAWwABAQEAAAAAAAAAAAAAAAAAAAMEAQEAAAAAAAAAAAAAAAAAAAAAEAABAwEJAAAAAAAAAAAAAAARAAESEyFhodEygjMUBREAAwAAAAAAAAAAAAAAAAAAAEFC/9oADAMBAAIRAxEAPwDb7kupZU1MTGnvOCgxpvzEXTyRElCmf//Z'
-  },
-  {
-    name: 'ladies_tshirts',
-    title: 'Ladies T-Shirts',
-    image: 'images/ladies_tshirts.jpg',
-    placeholder: 'data:image/jpeg;base64,/9j/4QAYRXhpZgAASUkqAAgAAAAAAAAAAAAAAP/sABFEdWNreQABAAQAAAAeAAD/7gAOQWRvYmUAZMAAAAAB/9sAhAAQCwsLDAsQDAwQFw8NDxcbFBAQFBsfFxcXFxcfHhcaGhoaFx4eIyUnJSMeLy8zMy8vQEBAQEBAQEBAQEBAQEBAAREPDxETERUSEhUUERQRFBoUFhYUGiYaGhwaGiYwIx4eHh4jMCsuJycnLis1NTAwNTVAQD9AQEBAQEBAQEBAQED/wAARCAADAA4DASIAAhEBAxEB/8QAXwABAQEAAAAAAAAAAAAAAAAAAAMFAQEBAAAAAAAAAAAAAAAAAAABAhAAAQIDCQAAAAAAAAAAAAAAEQABITETYZECEjJCAzMVEQACAwAAAAAAAAAAAAAAAAAAATFBgf/aAAwDAQACEQMRAD8AzeADAZiFc5J7BC9Scek3VrtooilSNaf/2Q=='
-  }
-];
+
+// Shared in-memory cache of categories so multiple <shop-category-data> elements
+// don't each refetch.
+let _categoriesPromise = null;
+function fetchCategoriesOnce() {
+  if (_categoriesPromise) return _categoriesPromise;
+  _categoriesPromise = fetch('/api/categories', { credentials: 'same-origin' })
+    .then(r => r.ok ? r.json() : [])
+    .catch(() => []);
+  return _categoriesPromise;
+}
 
 class ShopCategoryData extends PolymerElement {
 
@@ -40,14 +25,14 @@ class ShopCategoryData extends PolymerElement {
 
     categories: {
       type: Array,
-      value: categoryList,
+      value: () => [],
       readOnly: true,
       notify: true
     },
 
     category: {
       type: Object,
-      computed: '_computeCategory(categoryName)',
+      computed: '_computeCategory(categoryName, categories)',
       notify: true
     },
 
@@ -65,6 +50,20 @@ class ShopCategoryData extends PolymerElement {
 
   }}
 
+  constructor() {
+    super();
+    fetchCategoriesOnce().then(list => {
+      // Ensure each entry has the fields the UI expects
+      const normalized = (Array.isArray(list) ? list : []).map(c => ({
+        name: c.name,
+        title: c.title,
+        image: c.image || '',
+        placeholder: c.placeholder || ''
+      }));
+      this._setCategories(normalized);
+    });
+  }
+
   _getCategoryObject(categoryName) {
     for (let i = 0, c; c = this.categories[i]; ++i) {
       if (c.name === categoryName) {
@@ -73,10 +72,8 @@ class ShopCategoryData extends PolymerElement {
     }
   }
 
-  _computeCategory(categoryName) {
-    // Fetch the items of the category. Note that the fetch is asynchronous,
-    // which means `category.items` may not be set initially (but that path
-    // will be notified when the fetch completes).
+  _computeCategory(categoryName, categories) {
+    if (!categoryName || !categories || !categories.length) return;
     let categoryObj = this._getCategoryObject(categoryName);
     this._fetchItems(categoryObj, 1);
     return categoryObj;
@@ -95,14 +92,14 @@ class ShopCategoryData extends PolymerElement {
 
   _fetchItems(category, attempts) {
     this._setFailure(false);
-    // Only fetch the items of a category if it has not been previously set.
     if (!category || category.items) {
       return;
     }
     this._getResource({
-      url: 'data/' + category.name + '.json',
+      url: '/api/inventory/' + category.name,
       onLoad(e) {
-        this.set('category.items', JSON.parse(e.target.responseText));
+        const items = JSON.parse(e.target.responseText).filter(i => !i.sold);
+        this.set('category.items', items);
       },
       onError(e) {
         this._setFailure(true);
@@ -114,7 +111,6 @@ class ShopCategoryData extends PolymerElement {
     let xhr = new XMLHttpRequest();
     xhr.addEventListener('load', rq.onLoad.bind(this));
     xhr.addEventListener('error', (e) => {
-      // Flaky connections might fail fetching resources
       if (attempts > 1) {
         this._getResourceDebouncer = Debouncer.debounce(this._getResourceDebouncer,
           timeOut.after(200), this._getResource.bind(this, rq, attempts - 1));
@@ -129,7 +125,6 @@ class ShopCategoryData extends PolymerElement {
 
   refresh() {
     if (this.categoryName) {
-      // Try at most 3 times to get the items.
       this._fetchItems(this._getCategoryObject(this.categoryName), 3);
     }
   }

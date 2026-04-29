@@ -1,0 +1,380 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>SHOP — Add Item</title>
+  <style>
+    :root { color-scheme: light dark; }
+    * { box-sizing: border-box; }
+    body {
+      font-family: system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+      max-width: 640px;
+      margin: 0 auto;
+      padding: 24px 16px 80px;
+      line-height: 1.4;
+    }
+    h1 { margin: 0 0 4px; font-size: 22px; }
+    p.lead { margin: 0 0 24px; color: #666; font-size: 14px; }
+    label { display: block; font-weight: 600; margin: 16px 0 6px; font-size: 14px; }
+    input[type=text], input[type=number], textarea, select {
+      width: 100%; padding: 10px; font: inherit;
+      border: 1px solid #bbb; border-radius: 6px; background: transparent; color: inherit;
+    }
+    textarea { min-height: 100px; resize: vertical; }
+    .capture {
+      display: grid; gap: 12px;
+      grid-template-columns: 1fr 1fr;
+      margin-top: 6px;
+    }
+    .capture .slot {
+      border: 2px dashed #bbb; border-radius: 8px; padding: 12px;
+      display: flex; flex-direction: column; gap: 8px; align-items: center;
+      min-height: 180px; justify-content: center; position: relative;
+    }
+    .capture .slot small { color: #888; }
+    .capture .slot img { max-width: 100%; max-height: 200px; border-radius: 4px; object-fit: contain; }
+    .capture button.clear {
+      position: absolute; top: 6px; right: 6px;
+      background: rgba(0,0,0,0.6); color: white; border: 0; border-radius: 50%;
+      width: 24px; height: 24px; cursor: pointer; font-size: 14px; line-height: 1;
+    }
+    .pickers { display: flex; gap: 8px; flex-wrap: wrap; justify-content: center; }
+    .pickers label.btn {
+      display: inline-block; padding: 8px 12px; border: 1px solid #888; border-radius: 6px;
+      cursor: pointer; font-weight: 500; font-size: 13px; margin: 0;
+    }
+    .pickers input[type=file] { display: none; }
+    button.primary {
+      margin-top: 24px; width: 100%;
+      padding: 14px; font: inherit; font-weight: 600; font-size: 15px;
+      background: #202020; color: white; border: 0; border-radius: 8px; cursor: pointer;
+    }
+    button.primary:disabled { opacity: 0.5; cursor: not-allowed; }
+    .row { display: flex; gap: 12px; flex-wrap: wrap; }
+    .row > * { flex: 1 1 120px; }
+    .sizes { display: flex; flex-wrap: wrap; gap: 8px 14px; margin-top: 6px; }
+    .sizes label {
+      display: inline-flex; align-items: center; gap: 6px;
+      margin: 0; font-weight: 500; font-size: 14px; cursor: pointer;
+      padding: 6px 10px; border: 1px solid #bbb; border-radius: 6px;
+    }
+    .sizes label.size-other { flex: 1 1 180px; padding: 0; border: 0; }
+    .sizes label.size-other input { width: 100%; padding: 8px 10px; border: 1px solid #bbb; border-radius: 6px; font: inherit; background: transparent; color: inherit; }
+    .status {
+      margin-top: 16px; padding: 12px; border-radius: 6px; font-size: 14px;
+      display: none;
+    }
+    .status.show { display: block; }
+    .status.ok { background: #e6f4ea; color: #0b6b2c; }
+    .status.err { background: #fde7e9; color: #a1242b; }
+    .barcode-hint { font-size: 12px; color: #0b6b2c; margin-top: 4px; min-height: 1em; }
+    nav { font-size: 13px; margin-bottom: 16px; }
+    nav a { color: #0b67d6; }
+  </style>
+</head>
+<body>
+  <nav><a href="/">&larr; back to shop</a> <a href="/inventory.html">inventory</a> <a href="/categories.html">categories</a></nav>
+  <h1 id="pageTitle">Add inventory item</h1>
+  <p class="lead" id="pageLead">Snap a photo of the item, optionally a tag for the barcode/SKU, then fill the rest.</p>
+
+  <form id="f">
+    <label>Item photo *</label>
+    <div class="capture">
+      <div class="slot" data-slot="image">
+        <small>Item photo</small>
+        <div class="pickers">
+          <label class="btn">📷 Camera<input type="file" accept="image/*" capture="environment" data-target="image"></label>
+          <label class="btn">📁 File<input type="file" accept="image/*" data-target="image"></label>
+        </div>
+      </div>
+      <div class="slot" data-slot="tagImage">
+        <small>Tag / barcode (optional)</small>
+        <div class="pickers">
+          <label class="btn">📷 Camera<input type="file" accept="image/*" capture="environment" data-target="tagImage"></label>
+          <label class="btn">📁 File<input type="file" accept="image/*" data-target="tagImage"></label>
+        </div>
+      </div>
+    </div>
+    <div class="barcode-hint" id="barcodeHint"></div>
+
+    <label for="category">Category *</label>
+    <select id="category" name="category" required></select>
+
+    <label for="title">Title *</label>
+    <input id="title" name="title" type="text" required placeholder="e.g. Vintage Denim Jacket">
+
+    <div class="row">
+      <div>
+        <label for="price">Price (USD)</label>
+        <input id="price" name="price" type="number" step="0.01" min="0" value="0">
+      </div>
+      <div>
+        <label for="quantity">Quantity</label>
+        <input id="quantity" name="quantity" type="number" step="1" min="0" value="1">
+      </div>
+      <div>
+        <label for="barcode">Barcode / SKU</label>
+        <input id="barcode" name="barcode" type="text" placeholder="auto-detected if possible">
+      </div>
+    </div>
+
+    <label>Size</label>
+    <div id="sizes" class="sizes">
+      <label><input type="radio" name="size" value="XS"> XS</label>
+      <label><input type="radio" name="size" value="S"> S</label>
+      <label><input type="radio" name="size" value="M"> M</label>
+      <label><input type="radio" name="size" value="L"> L</label>
+      <label><input type="radio" name="size" value="XL"> XL</label>
+      <label><input type="radio" name="size" value="XXL"> XXL</label>
+      <label class="size-other">
+        <input type="text" id="sizeOther" placeholder="other size">
+      </label>
+    </div>
+
+    <label for="description">Description</label>
+    <textarea id="description" name="description" placeholder="HTML allowed"></textarea>
+
+    <button class="primary" type="submit" id="submitBtn">Save item</button>
+    <div id="status" class="status"></div>
+  </form>
+
+  <script type="module">
+    const MAX_DIM = 1400;
+    const captured = { image: null, tagImage: null }; // dataURL strings
+    const slots = {
+      image: document.querySelector('[data-slot=image]'),
+      tagImage: document.querySelector('[data-slot=tagImage]')
+    };
+
+    const statusEl = document.getElementById('status');
+    const submitBtn = document.getElementById('submitBtn');
+    const barcodeHint = document.getElementById('barcodeHint');
+    const barcodeInput = document.getElementById('barcode');
+    const titleInput = document.getElementById('title');
+
+    // ---- Edit mode detection ----
+    const editParam = new URLSearchParams(location.search).get('edit'); // "category/name"
+    const editing = !!editParam;
+    let editTarget = null; // { category, name } captured at load (before any category change)
+    if (editing) {
+      document.getElementById('pageTitle').textContent = 'Edit inventory item';
+      document.getElementById('pageLead').textContent = 'Update fields and/or replace photos. Leave a photo empty to keep the existing one.';
+      submitBtn.textContent = 'Save changes';
+    }
+
+    function setStatus(msg, kind) {
+      statusEl.textContent = msg;
+      statusEl.className = 'status show ' + (kind || '');
+    }
+
+    // ---- Load categories ----
+    fetch('/api/categories')
+      .then(r => r.json())
+      .then(cats => {
+        const sel = document.getElementById('category');
+        for (const c of cats) {
+          const name = typeof c === 'string' ? c : c.name;
+          const title = typeof c === 'string' ? name.replace(/_/g, ' ') : (c.title || name);
+          const o = document.createElement('option');
+          o.value = name;
+          o.textContent = title;
+          sel.appendChild(o);
+        }
+        if (editing) loadForEdit();
+      })
+      .catch(e => setStatus('Failed to load categories: ' + e.message, 'err'));
+
+    async function loadForEdit() {
+      try {
+        const [cat, name] = editParam.split('/').map(decodeURIComponent);
+        const r = await fetch(`/api/items/${encodeURIComponent(cat)}/${encodeURIComponent(name)}`);
+        if (!r.ok) throw new Error('not found');
+        const item = await r.json();
+        editTarget = { category: cat, name };
+        document.getElementById('category').value = item.category;
+        titleInput.value = item.title || '';
+        document.getElementById('price').value = item.price ?? 0;
+        document.getElementById('quantity').value = item.quantity ?? 1;
+        document.getElementById('description').value = item.description || '';
+        barcodeInput.value = item.barcode || '';
+        // Sizes (single value)
+        const known = new Set(['XS','S','M','L','XL','XXL']);
+        const first = (item.sizes || [])[0];
+        if (first) {
+          if (known.has(first)) {
+            const rb = document.querySelector(`input[name=size][value="${first}"]`);
+            if (rb) rb.checked = true;
+          } else {
+            document.getElementById('sizeOther').value = first;
+          }
+        }
+        // Existing image preview (no captured dataURL — server keeps current)
+        if (item.image) {
+          slots.image.innerHTML = '';
+          const img = document.createElement('img');
+          img.src = '/' + item.image;
+          slots.image.appendChild(img);
+          const small = document.createElement('small');
+          small.textContent = 'current photo · pick a new one to replace';
+          slots.image.appendChild(small);
+          const pickers = document.createElement('div');
+          pickers.className = 'pickers';
+          pickers.innerHTML = `
+            <label class="btn">📷 Camera<input type="file" accept="image/*" capture="environment" data-target="image"></label>
+            <label class="btn">📁 File<input type="file" accept="image/*" data-target="image"></label>`;
+          slots.image.appendChild(pickers);
+          bindInputs();
+        }
+      } catch (e) {
+        setStatus('Could not load item: ' + e.message, 'err');
+      }
+    }
+
+    // ---- Resize image to dataURL ----
+    async function fileToResizedDataUrl(file) {
+      const bitmap = await createImageBitmap(file);
+      const scale = Math.min(1, MAX_DIM / Math.max(bitmap.width, bitmap.height));
+      const w = Math.round(bitmap.width * scale);
+      const h = Math.round(bitmap.height * scale);
+      const canvas = document.createElement('canvas');
+      canvas.width = w; canvas.height = h;
+      canvas.getContext('2d').drawImage(bitmap, 0, 0, w, h);
+      return canvas.toDataURL('image/jpeg', 0.85);
+    }
+
+    // ---- Barcode detection ----
+    async function tryDetectBarcode(dataUrl) {
+      if (!('BarcodeDetector' in window)) {
+        barcodeHint.textContent = 'Barcode auto-detect not supported in this browser — type SKU manually if needed.';
+        return;
+      }
+      try {
+        const formats = await BarcodeDetector.getSupportedFormats();
+        const detector = new BarcodeDetector({ formats });
+        const img = new Image();
+        img.src = dataUrl;
+        await img.decode();
+        const codes = await detector.detect(img);
+        if (codes.length) {
+          barcodeInput.value = codes[0].rawValue;
+          barcodeHint.textContent = `Detected ${codes[0].format}: ${codes[0].rawValue}`;
+        } else {
+          barcodeHint.textContent = 'No barcode found in tag image.';
+        }
+      } catch (e) {
+        barcodeHint.textContent = 'Barcode scan failed: ' + e.message;
+      }
+    }
+
+    // ---- Render slot preview ----
+    function renderPreview(target, dataUrl) {
+      const slot = slots[target];
+      slot.innerHTML = '';
+      const img = document.createElement('img');
+      img.src = dataUrl;
+      slot.appendChild(img);
+      const close = document.createElement('button');
+      close.type = 'button';
+      close.className = 'clear';
+      close.textContent = '×';
+      close.title = 'Remove';
+      close.onclick = () => { captured[target] = null; rebuildSlot(target); };
+      slot.appendChild(close);
+    }
+
+    function rebuildSlot(target) {
+      const slot = slots[target];
+      const isMain = target === 'image';
+      slot.innerHTML = `
+        <small>${isMain ? 'Item photo' : 'Tag / barcode (optional)'}</small>
+        <div class="pickers">
+          <label class="btn">📷 Camera<input type="file" accept="image/*" capture="environment" data-target="${target}"></label>
+          <label class="btn">📁 File<input type="file" accept="image/*" data-target="${target}"></label>
+        </div>`;
+      bindInputs();
+      if (target === 'tagImage') barcodeHint.textContent = '';
+    }
+
+    function bindInputs() {
+      document.querySelectorAll('input[type=file][data-target]').forEach(inp => {
+        inp.onchange = async () => {
+          const file = inp.files && inp.files[0];
+          if (!file) return;
+          const target = inp.dataset.target;
+          try {
+            const dataUrl = await fileToResizedDataUrl(file);
+            captured[target] = dataUrl;
+            renderPreview(target, dataUrl);
+            if (target === 'tagImage') {
+              barcodeHint.textContent = 'Scanning tag…';
+              tryDetectBarcode(dataUrl);
+            }
+          } catch (e) {
+            setStatus('Could not read image: ' + e.message, 'err');
+          }
+        };
+      });
+    }
+    bindInputs();
+
+    // ---- Submit ----
+    document.getElementById('f').addEventListener('submit', async (e) => {
+      e.preventDefault();
+      if (!editing && !captured.image) { setStatus('Item photo is required.', 'err'); return; }
+      submitBtn.disabled = true;
+      setStatus('Saving…');
+      const checkedSize = document.querySelector('input[name=size]:checked');
+      const otherSize = document.getElementById('sizeOther').value.trim();
+      const sizes = checkedSize ? [checkedSize.value] : (otherSize ? [otherSize] : []);
+      const payload = {
+        category: document.getElementById('category').value,
+        title: titleInput.value.trim(),
+        price: parseFloat(document.getElementById('price').value) || 0,
+        quantity: parseInt(document.getElementById('quantity').value, 10),
+        sizes,
+        description: document.getElementById('description').value.trim(),
+        barcode: barcodeInput.value.trim() || ''
+      };
+      if (captured.image) payload.imageDataUrl = captured.image;
+      if (captured.tagImage) payload.tagDataUrl = captured.tagImage;
+      if (!Number.isFinite(payload.quantity) || payload.quantity < 0) payload.quantity = 1;
+      try {
+        let r;
+        if (editing && editTarget) {
+          r = await fetch(`/api/items/${encodeURIComponent(editTarget.category)}/${encodeURIComponent(editTarget.name)}`, {
+            method: 'PATCH',
+            headers: { 'content-type': 'application/json' },
+            body: JSON.stringify(payload)
+          });
+        } else {
+          r = await fetch('/api/items', {
+            method: 'POST',
+            headers: { 'content-type': 'application/json' },
+            body: JSON.stringify(payload)
+          });
+        }
+        const data = await r.json();
+        if (!r.ok) throw new Error(data.error || ('HTTP ' + r.status));
+        if (editing) {
+          setStatus(`Updated "${data.title}".`, 'ok');
+          setTimeout(() => location.href = '/inventory.html', 600);
+        } else {
+          setStatus(`Saved as "${data.title}" in ${data.category}.`, 'ok');
+          e.target.reset();
+          document.getElementById('price').value = '0';
+          document.getElementById('quantity').value = '1';
+          document.getElementById('sizeOther').value = '';
+          captured.image = null; captured.tagImage = null;
+          rebuildSlot('image'); rebuildSlot('tagImage');
+          barcodeInput.value = '';
+        }
+      } catch (err) {
+        setStatus('Save failed: ' + err.message, 'err');
+      } finally {
+        submitBtn.disabled = false;
+      }
+    });
+  </script>
+</body>
+</html>
